@@ -4,9 +4,9 @@ module "eks_cluster" {
   cluster_name              = var.cluster_name
   cluster_version           = var.cluster_version
   private_subnet_ids        = data.terraform_remote_state.network.outputs.private_subnet_ids
-  cluster_role_arn          = data.terraform_remote_state.iam.outputs.eks_cluster_role_arn
+  cluster_role_arn          = data.terraform_remote_state.iam.outputs.cluster_role_arn
   cluster_security_group_id = data.terraform_remote_state.network.outputs.eks_cluster_sg_id
-  kms_key_arn               = data.terraform_remote_state.kms.outputs.key_arn
+  kms_key_arn               = data.terraform_remote_state.security.outputs.kms_key_arn
 
   tags = local.common_tags
 }
@@ -15,27 +15,11 @@ module "node_groups" {
   source = "../../modules/eks/node_groups"
 
   cluster_name            = module.eks_cluster.cluster_name
-  node_role_arn           = data.terraform_remote_state.iam.outputs.eks_node_role_arn
+  node_role_arn           = data.terraform_remote_state.iam.outputs.node_role_arn
   private_subnet_ids      = data.terraform_remote_state.network.outputs.private_subnet_ids
   launch_template_id      = module.launch_template.launch_template_id
   launch_template_version = module.launch_template.latest_version
   node_groups             = local.node_groups
-
-  tags = local.common_tags
-}
-
-module "cluster_role" {
-  source = "../../modules/eks/iam/cluster_role"
-
-  cluster_name = var.cluster_name
-
-  tags = local.common_tags
-}
-
-module "node_role" {
-  source = "../../modules/eks/iam/node_role"
-
-  cluster_name = var.cluster_name
 
   tags = local.common_tags
 }

@@ -14,10 +14,10 @@ data "terraform_remote_state" "iam" {
   }
 }
 
-data "terraform_remote_state" "kms" {
+data "terraform_remote_state" "security" {
   backend = "local"
 
   config = {
-    path = "../kms/terraform.tfstate"
+    path = "../security/terraform.tfstate"
   }
 }

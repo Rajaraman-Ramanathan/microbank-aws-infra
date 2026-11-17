@@ -7,7 +7,7 @@ module "kms" {
     "arn:aws:iam::123456789012:role/platform-admin"
   ]
   usage_principals = [
-    module.node_role.node_role_arn
+    data.terraform_remote_state.iam.outputs.node_role_arn
   ]
 
   tags = local.common_tags
@@ -27,7 +27,7 @@ module "db_secret" {
   }
   enable_resource_policy = true
   allowed_principals = [
-    module.node_role.node_role_arn
+    data.terraform_remote_state.iam.outputs.node_role_arn
   ]
 
   tags = local.common_tags
@@ -52,16 +52,6 @@ module "acm" {
   subject_alternative_names = [
     "microbank.com"
   ]
-
-  tags = local.common_tags
-}
-
-module "waf" {
-  source = "../../modules/security/waf"
-
-  name = "microbank-waf"
-  alb_arn = module.alb.alb_arn
-  rate_limit = 2000
 
   tags = local.common_tags
 }
