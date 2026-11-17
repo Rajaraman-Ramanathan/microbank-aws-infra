@@ -3,7 +3,7 @@ module "rds_postgres" {
 
   name = "microbank-postgres"
 
-  vpc_id        = data.terraform_remote_state.network.outputs.vpc_id
+  vpc_id = data.terraform_remote_state.network.outputs.vpc_id
 
   db_subnet_ids = data.terraform_remote_state.network.outputs.db_subnet_ids
 
@@ -11,7 +11,7 @@ module "rds_postgres" {
 
   kms_key_arn = data.terraform_remote_state.kms.outputs.key_arn
 
-  backup_window = local.backup_window
+  backup_window      = local.backup_window
   maintenance_window = local.maintenance_window
 
   master_username = "postgres"
@@ -30,7 +30,7 @@ module "rds_postgres" {
   tags = local.common_tags
 }
 
-module "postgres_bootstrap" {
+/** module "postgres_bootstrap" {
   source = "../../modules/database/postgres_bootstrap"
 
   endpoint = module.rds_postgres.address
@@ -39,4 +39,4 @@ module "postgres_bootstrap" {
   depends_on = [
     module.rds_postgres
   ]
-}
+} **/
