@@ -15,12 +15,12 @@ module "eks_cluster" {
 module "node_groups" {
   source = "../../modules/eks/node_groups"
 
-  cluster_name             = module.eks_cluster.cluster_name
-  node_role_arn            = data.terraform_remote_state.iam.outputs.node_role_arn
-  private_subnet_ids       = data.terraform_remote_state.network.outputs.private_subnet_ids
-  launch_template_id       = module.launch_template.launch_template_id
-  launch_template_version  = module.launch_template.latest_version
-  node_groups              = local.node_groups
+  cluster_name            = module.eks_cluster.cluster_name
+  node_role_arn           = data.terraform_remote_state.iam.outputs.node_role_arn
+  private_subnet_ids      = data.terraform_remote_state.network.outputs.private_subnet_ids
+  launch_template_id      = module.launch_template.launch_template_id
+  launch_template_version = module.launch_template.latest_version
+  node_groups             = local.node_groups
 
   tags = local.common_tags
 }
