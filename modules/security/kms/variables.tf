@@ -25,3 +25,9 @@ variable "tags" {
   type    = map(string)
   default = {}
 }
+
+variable "eks_provisioning_principals" {
+  description = "IAM principals permitted to provision EKS using this KMS key"
+  type        = list(string)
+  default     = []
+}

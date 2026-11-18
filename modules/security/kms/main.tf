@@ -74,6 +74,28 @@ data "aws_iam_policy_document" "kms" {
       resources = ["*"]
     }
   }
+
+  # Allow EKS provisioning principal to create KMS grants
+  dynamic "statement" {
+    for_each = length(var.eks_provisioning_principals) > 0 ? [1] : []
+
+    content {
+      sid    = "AllowEKSProvisioning"
+      effect = "Allow"
+
+      principals {
+        type        = "AWS"
+        identifiers = var.eks_provisioning_principals
+      }
+
+      actions = [
+        "kms:DescribeKey",
+        "kms:CreateGrant"
+      ]
+
+      resources = ["*"]
+    }
+  }
 }
 
 resource "aws_kms_key" "this" {

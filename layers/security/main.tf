@@ -9,6 +9,9 @@ module "kms" {
   usage_principals = [
     data.terraform_remote_state.iam.outputs.node_role_arn
   ]
+  eks_provisioning_principals = [
+    "arn:aws:iam::123456789012:role/terraform-deployment-role"
+]
 
   tags = local.common_tags
 }
@@ -48,7 +51,7 @@ module "acm" {
   source = "../../modules/security/acm"
 
   domain_name = "*.microbank.com"
-  hosted_zone_id = module.route53.zone_id
+  hosted_zone_id = data.terraform_remote_state.dns.outputs.public_zone_id
   subject_alternative_names = [
     "microbank.com"
   ]
