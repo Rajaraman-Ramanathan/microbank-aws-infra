@@ -1,3 +1,4 @@
+
 module "eks_cluster" {
   source = "../../modules/eks/cluster"
 
@@ -14,12 +15,21 @@ module "eks_cluster" {
 module "node_groups" {
   source = "../../modules/eks/node_groups"
 
-  cluster_name            = module.eks_cluster.cluster_name
-  node_role_arn           = data.terraform_remote_state.iam.outputs.node_role_arn
-  private_subnet_ids      = data.terraform_remote_state.network.outputs.private_subnet_ids
-  launch_template_id      = module.launch_template.launch_template_id
-  launch_template_version = module.launch_template.latest_version
-  node_groups             = local.node_groups
+  cluster_name             = module.eks_cluster.cluster_name
+  node_role_arn            = data.terraform_remote_state.iam.outputs.node_role_arn
+  private_subnet_ids       = data.terraform_remote_state.network.outputs.private_subnet_ids
+  launch_template_id       = module.launch_template.launch_template_id
+  launch_template_version  = module.launch_template.latest_version
+  node_groups              = local.node_groups
+
+  tags = local.common_tags
+}
+
+module "launch_template" {
+  source = "../../modules/eks/launch_template"
+
+  cluster_name           = var.cluster_name
+  node_security_group_id = data.terraform_remote_state.network.outputs.eks_node_sg_id
 
   tags = local.common_tags
 }
@@ -38,18 +48,71 @@ module "irsa_external_dns" {
 
   cluster_name      = var.cluster_name
   namespace         = "kube-system"
-  service_account   = "external-dns"
+  service_account   = "external-dns-sa"
   oidc_provider_arn = module.oidc.arn
   oidc_provider_url = module.oidc.url
 
   policy_arns = [
-    "arn:aws:iam::aws:policy/AmazonRoute53FullAccess"
+    data.terraform_remote_state.security.outputs.external_dns_policy_arn
+  ]
+
+  tags = local.common_tags
+
+  depends_on = [module.oidc]
+}
+
+module "irsa_alb" {
+  source = "../../modules/eks/iam/irsa"
+
+  cluster_name      = var.cluster_name
+  namespace         = "kube-system"
+  service_account   = "aws-load-balancer-controller-sa"
+  oidc_provider_arn = module.oidc.arn
+  oidc_provider_url = module.oidc.url
+
+  policy_arns = [
+    data.terraform_remote_state.security.outputs.alb_controller_policy_arn
+  ]
+
+  tags = local.common_tags
+
+  depends_on = [module.oidc]
+}
+
+module "irsa_ebs_csi" {
+  source = "../../modules/eks/iam/irsa"
+
+  cluster_name      = var.cluster_name
+  namespace         = "kube-system"
+  service_account   = "ebs-csi-controller-sa"
+  oidc_provider_arn = module.oidc.arn
+  oidc_provider_url = module.oidc.url
+
+  policy_arns = [
+    "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+  ]
+
+  tags = local.common_tags
+
+  depends_on = [module.oidc]
+}
+
+module "irsa_external_secrets" {
+  source = "../../modules/eks/iam/irsa"
+
+  cluster_name      = var.cluster_name
+  namespace         = "external-secrets"
+  service_account   = "external-secrets-sa"
+  oidc_provider_arn = module.oidc.arn
+  oidc_provider_url = module.oidc.url
+
+  policy_arns = [
+    data.terraform_remote_state.security.outputs.external_secrets_policy_arn
   ]
 
   tags = local.common_tags
 
   depends_on = [
-    module.eks_cluster,
     module.oidc
   ]
 }
@@ -65,42 +128,3 @@ module "addons" {
     module.node_groups
   ]
 }
-
-module "irsa_ebs_csi" {
-  source = "../../modules/eks/iam/irsa"
-
-  cluster_name      = var.cluster_name
-  namespace         = "kube-system"
-  service_account   = "ebs-csi-controller-sa"
-  oidc_provider_arn = module.oidc.arn
-  oidc_provider_url = module.oidc.url
-
-  policy_arns = [
-    "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
-  ]
-}
-
-module "irsa_alb" {
-  source = "../../modules/eks/iam/irsa"
-
-  cluster_name      = var.cluster_name
-  namespace         = "kube-system"
-  service_account   = "aws-load-balancer-controller"
-  oidc_provider_arn = module.oidc.arn
-  oidc_provider_url = module.oidc.url
-
-  policy_arns = [
-    "arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess"
-  ]
-}
-
-module "launch_template" {
-  source = "../../modules/eks/launch_template"
-
-  cluster_name           = var.cluster_name
-  node_security_group_id = data.terraform_remote_state.network.outputs.eks_node_sg_id
-
-  tags = local.common_tags
-}
-
-
