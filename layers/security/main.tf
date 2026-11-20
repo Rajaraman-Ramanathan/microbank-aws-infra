@@ -18,7 +18,7 @@ module "kms" {
   description = "Microbank platform KMS key"
 
   admin_principals = [
-    "arn:aws:iam::123456789012:role/platform-admin"
+    "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/platform-admin"
   ]
 
   # ESO receives KMS permissions through its dedicated
@@ -26,7 +26,7 @@ module "kms" {
   usage_principals = []
 
   eks_provisioning_principals = [
-    "arn:aws:iam::123456789012:role/terraform-deployment-role"
+    "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/terraform-deployment-role"
   ]
 
   tags = local.common_tags
@@ -44,34 +44,7 @@ module "db_secret" {
 
   kms_key_arn = module.kms.key_arn
 
-  secret_map = {
-    username = "admin"
-    password = "REPLACE_WITH_SECURELY_INJECTED_VALUE"
-    host     = "postgres.internal"
-    port     = "5432"
-  }
-
   # ESO uses identity-based IAM permissions.
-  enable_resource_policy = false
-  allowed_principals     = []
-
-  tags = local.common_tags
-}
-
-# --------------------------------------------------
-# Payment API credentials in AWS Secrets Manager
-# --------------------------------------------------
-
-module "api_secret" {
-  source = "../../modules/security/secret_manager"
-
-  name        = "microbank-payment-api-key"
-  description = "Microbank payment provider API key"
-
-  kms_key_arn = module.kms.key_arn
-
-  secret_string = "REPLACE_WITH_SECURELY_INJECTED_VALUE"
-
   enable_resource_policy = false
   allowed_principals     = []
 
@@ -128,12 +101,12 @@ resource "aws_iam_policy" "external_secrets" {
 module "acm" {
   source = "../../modules/security/acm"
 
-  domain_name = "*.microbank.com"
+  domain_name = "*.microbankapp.com"
 
   hosted_zone_id = data.terraform_remote_state.dns.outputs.public_zone_id
 
   subject_alternative_names = [
-    "microbank.com"
+    "microbankapp.com"
   ]
 
   tags = local.common_tags

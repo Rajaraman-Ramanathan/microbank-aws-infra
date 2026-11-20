@@ -23,17 +23,36 @@ resource "aws_acm_certificate" "this" {
   )
 }
 
+
 resource "aws_route53_record" "validation" {
-  for_each = local.validation_records
+  for_each = toset(local.validation_domains)
+
   zone_id = var.hosted_zone_id
-  name = each.value.name
-  type = each.value.type
+
+  name = one([
+    for dvo in aws_acm_certificate.this.domain_validation_options :
+    dvo.resource_record_name
+    if replace(dvo.domain_name, "*.", "") == each.key
+  ])
+
+  type = one([
+    for dvo in aws_acm_certificate.this.domain_validation_options :
+    dvo.resource_record_type
+    if replace(dvo.domain_name, "*.", "") == each.key
+  ])
+
   records = [
-    each.value.value
+    one([
+      for dvo in aws_acm_certificate.this.domain_validation_options :
+      dvo.resource_record_value
+      if replace(dvo.domain_name, "*.", "") == each.key
+    ])
   ]
-  ttl = 60
+
+  ttl             = 60
   allow_overwrite = true
 }
+
 
 resource "aws_acm_certificate_validation" "this" {
   certificate_arn = aws_acm_certificate.this.arn
