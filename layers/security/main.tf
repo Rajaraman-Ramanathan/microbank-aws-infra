@@ -17,17 +17,13 @@ module "kms" {
   name        = "microbank-kms"
   description = "Microbank platform KMS key"
 
-  admin_principals = [
-    "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/platform-admin"
-  ]
+  admin_principals = []
 
   # ESO receives KMS permissions through its dedicated
   # IAM policy. No direct node-role access is required.
   usage_principals = []
 
-  eks_provisioning_principals = [
-    "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/terraform-deployment-role"
-  ]
+  eks_provisioning_principals = []
 
   tags = local.common_tags
 }

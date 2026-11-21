@@ -1,9 +1,9 @@
 locals {
-  validation_domains = distinct([
+  validation_domains = toset([
     for domain in concat(
       [var.domain_name],
       var.subject_alternative_names
     ) :
-    replace(domain, "*.", "")
+    trimprefix(domain, "*.")
   ])
 }

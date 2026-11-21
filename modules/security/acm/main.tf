@@ -18,10 +18,11 @@ resource "aws_acm_certificate" "this" {
   tags = merge(
     var.tags,
     {
-      Name = var.domain_name
+      Name = "microbankapp.com-wildcard-certificate"
     }
   )
 }
+
 
 
 resource "aws_route53_record" "validation" {
@@ -29,30 +30,29 @@ resource "aws_route53_record" "validation" {
 
   zone_id = var.hosted_zone_id
 
-  name = one([
+  name = [
     for dvo in aws_acm_certificate.this.domain_validation_options :
     dvo.resource_record_name
-    if replace(dvo.domain_name, "*.", "") == each.key
-  ])
+    if trimprefix(dvo.domain_name, "*.") == each.key
+  ][0]
 
-  type = one([
+  type = [
     for dvo in aws_acm_certificate.this.domain_validation_options :
     dvo.resource_record_type
-    if replace(dvo.domain_name, "*.", "") == each.key
-  ])
+    if trimprefix(dvo.domain_name, "*.") == each.key
+  ][0]
 
   records = [
-    one([
+    [
       for dvo in aws_acm_certificate.this.domain_validation_options :
       dvo.resource_record_value
-      if replace(dvo.domain_name, "*.", "") == each.key
-    ])
+      if trimprefix(dvo.domain_name, "*.") == each.key
+    ][0]
   ]
 
   ttl             = 60
   allow_overwrite = true
 }
-
 
 resource "aws_acm_certificate_validation" "this" {
   certificate_arn = aws_acm_certificate.this.arn
